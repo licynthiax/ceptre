@@ -7,6 +7,7 @@ open Pos
 datatype token = 
    PRED | STAGE | CONTEXT 
  | IDENT of string | NUM of IntInf.int | HASHDENT of string
+ | COMMENT of string
  | LBRACE | RBRACE | LPAREN | RPAREN
  | PERIOD | COLON | COMMA | EQUALS | USCORE
  | UNIFY | DIFFER
@@ -16,6 +17,7 @@ fun toString tok =
    case tok of 
       PRED => "PRED" | STAGE => "STAGE" | CONTEXT => "CONTEXT"
     | IDENT s => s | NUM n => IntInf.toString n | HASHDENT s => ("#"^s)
+    | COMMENT s => ("% "^s)
     | LBRACE => "{" | RBRACE => "}" | LPAREN => "(" | RPAREN => ")"
     | PERIOD => "." | COLON => ":" | COMMA => "," | EQUALS => "="
     | USCORE => "_" 
@@ -132,6 +134,10 @@ LexFn
       Stream.Cons ((HASHDENT (stringrange (List.tl match)), posrange match),
          Stream.lazy (fn () => #lexmain self follow))
 
+   fun comment ({self, match, follow, ...}: info) =
+     Stream.Cons ((COMMENT (stringrange (List.tl match)), posrange match),
+       Stream.lazy (fn () => #lexmain self follow))
+
    fun simple token ({self, match, follow, ...}: info) = 
       Stream.Cons ((token, posrange match), 
          Stream.lazy (fn () => #lexmain self follow))
@@ -172,6 +178,7 @@ ParseFn
    type string = string
    type ign = unit
    type int = IntInf.int
+   type comment = string
 
    val Ign = ignore
    val Nil  = fn () => []

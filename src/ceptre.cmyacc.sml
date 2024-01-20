@@ -53,6 +53,7 @@ functor ParseFn
            | IDENT of string
            | NUM of int
            | HASHDENT of string
+           | COMMENT of string
            | LBRACE
            | RBRACE
            | LPAREN
@@ -1941,6 +1942,7 @@ Arg.PRED => (1, Value.nonterminal)
 | Arg.RLOLLI => (22, Value.nonterminal)
 | Arg.UNIFY => (23, Value.nonterminal)
 | Arg.DIFFER => (24, Value.nonterminal)
+| Arg.COMMENT x => (25, Value.string x)
 )
 )
 in

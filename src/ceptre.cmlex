@@ -19,7 +19,7 @@ function lexmain: t =
    "context" => context
    ws => skip
    (seq '# (+ id_start)) => hashident
-   (seq '% (* notnewln)) => skip
+   (seq '% (* notnewln)) => comment
    (seq '= '=) => unify
    (seq '< '>) => differ
    '{ => lbrace
