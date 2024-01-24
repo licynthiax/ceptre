@@ -82,6 +82,7 @@ struct
     | CBwd of bwd_rule
     | CBuiltin of string * C.builtin
     | CStageMode of C.ident * C.nondet
+    | CAnnote of string
 
    (* Basics: terms and atoms *)
 
@@ -259,4 +260,5 @@ struct
                        [ P.Id name ] => CStageMode (name, C.Interactive)
                      | _ => raise Fail "Format: #interactive <ident>")
               | _ => raise Fail ("Unknown directive #"^directive))
+       | P.Annote s => CAnnote s
 end

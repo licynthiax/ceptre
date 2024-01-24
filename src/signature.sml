@@ -11,6 +11,7 @@ struct
     | BwdRuleDecl   of Ceptre.bwd_rule_new
     | BuiltinDecl   of Ceptre.ident * Ceptre.builtin
     | StageModeDecl of Ceptre.ident * Ceptre.nondet
+    | Annote        of string
  
    datatype namespace = 
       FIRST (* First order data: types and terms *)
@@ -51,6 +52,7 @@ struct
        | BuiltinDecl (id, Ceptre.NAT_SUCC) => "#builtin NAT_SUCC "^id
        | StageModeDecl (id, Ceptre.Interactive) => "#interactive "^id^"."
        | StageModeDecl (id, _) => "???"
+       | Annote s => "%*** "^s
 
    fun id topdecl = 
       case topdecl of
@@ -66,6 +68,7 @@ struct
        | BuiltinDecl (_, Ceptre.NAT_ZERO) => (BUILTIN, "NAT_ZERO")
        | BuiltinDecl (_, Ceptre.NAT_SUCC) => (BUILTIN, "NAT_SUCC")
        | StageModeDecl _ => (NOTHING, "#interactive?")
+       | Annote s => (NOTHING, s)
 
    fun describe topdecl = 
       case topdecl of
@@ -82,6 +85,7 @@ struct
        | BwdRuleDecl id => "backward-chaining rule"
        | BuiltinDecl _ => "#builtin declaration"
        | StageModeDecl _ => "#interactive declaration"  
+       | Annote _ => "asterism annotation"
 
    type signat = topdecl list
    fun add signat topdecl = signat @ [topdecl]

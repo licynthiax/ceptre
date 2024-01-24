@@ -1,3 +1,4 @@
+sml
 name ParseFn
 
 terminal PRED 
@@ -6,6 +7,8 @@ terminal CONTEXT
 terminal IDENT of string
 terminal NUM of int
 terminal HASHDENT of string
+/* this might be a non-terminal actually but i'll deal with it later */
+terminal ANNOTE of string
 terminal LBRACE
 terminal RBRACE
 terminal LPAREN
@@ -32,6 +35,7 @@ nonterminal Top: top =
    STAGE 1:IDENT OpEquals LBRACE 2:Tops RBRACE OpPeriod         => Stage
    CONTEXT 1:IDENT OpEquals LBRACE 2:OpSyn RBRACE OpPeriod      => Context
    1:HASHDENT 2:Atomics PERIOD                                  => Special
+   1:ANNOTE                                                     => Annote
 
 nonterminal Tops: tops =       => NilT
    1:Top 2:Tops                => ConsT

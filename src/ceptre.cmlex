@@ -1,3 +1,4 @@
+sml
 name LexFn
 alphabet 129
 
@@ -19,7 +20,8 @@ function lexmain: t =
    "context" => context
    ws => skip
    (seq '# (+ id_start)) => hashident
-   (seq '% (* notnewln)) => comment
+   (seq "%***" (* notnewln)) => annotation
+   (seq '% (* notnewln)) => skip
    (seq '= '=) => unify
    (seq '< '>) => differ
    '{ => lbrace

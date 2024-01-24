@@ -342,6 +342,7 @@ struct
                 | CBwd of bwd_rule
                 | CBuiltin of string * Ceptre.builtin
                 | CStageMode of ident * Ceptre.nondet
+                | CAnnote of string
 
   (* checks decl wrt sg *)
   (* returns a csyn, either a CDecl or a CBwd *)
@@ -458,14 +459,15 @@ struct
                       handle IllFormed => CNone s)
        | Context _ => CCtx (extractContext ctxs sg top)
        | Special (directive, args) =>
-           case directive of
+           (case directive of
                 "trace" => CProg (extractTrace args ctxs sg)
               | "builtin" => CBuiltin (extractBuiltin args sg)
               | "interactive" =>
                   (case args of
                        [Id name] => CStageMode (name, Ceptre.Interactive)
                       | _ => raise IllFormed)
-              | _ => raise IllFormed (* XXX put builtin here *)
+              | _ => raise IllFormed) (* XXX put builtin here *)
+       | Annote s => CAnnote s
 
   fun csynToString (CStage stage) = stageToString stage
     | csynToString (CRule rule) = ruleToString rule
@@ -480,6 +482,7 @@ struct
     | csynToString (CBuiltin builtin) = "builtin" (* XXX *)
     | csynToString (CStageMode (id,mode)) = 
         "#" ^ (nondetToString mode) ^ " " ^ id ^ "."
+    | csynToString (CAnnote s) = "%*** "^s
       
 
 
@@ -541,6 +544,10 @@ struct
                       process' tops sg bwds contexts stages' links progs
                         builtins
                     end
+                | CAnnote s => process' tops sg bwds contexts stages links
+                               progs builtins
+                               (* XXX this is definitely not correct i'm just
+                               * trying to get this program to work right now *)
              )
 
   fun process tops = process' tops [] [] [] [] [] [] []

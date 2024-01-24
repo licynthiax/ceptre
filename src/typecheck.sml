@@ -316,4 +316,5 @@ struct
            (case S.find signat (S.STAGE, stage) of
                SOME (S.StageDecl _) => S.StageModeDecl (stage, nondet_mode)
              | decl => expectedNot stage "stage" decl)
+       | CS.CAnnote s => S.Annote s
 end

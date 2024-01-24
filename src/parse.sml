@@ -7,7 +7,7 @@ open Pos
 datatype token = 
    PRED | STAGE | CONTEXT 
  | IDENT of string | NUM of IntInf.int | HASHDENT of string
- | COMMENT of string
+ | ANNOTE of string
  | LBRACE | RBRACE | LPAREN | RPAREN
  | PERIOD | COLON | COMMA | EQUALS | USCORE
  | UNIFY | DIFFER
@@ -17,7 +17,7 @@ fun toString tok =
    case tok of 
       PRED => "PRED" | STAGE => "STAGE" | CONTEXT => "CONTEXT"
     | IDENT s => s | NUM n => IntInf.toString n | HASHDENT s => ("#"^s)
-    | COMMENT s => ("% "^s)
+    | ANNOTE s => ("%*** "^s)
     | LBRACE => "{" | RBRACE => "}" | LPAREN => "(" | RPAREN => ")"
     | PERIOD => "." | COLON => ":" | COMMA => "," | EQUALS => "="
     | USCORE => "_" 
@@ -71,6 +71,7 @@ datatype top =
  | Stage of string * top list     (* stage x {decl1, ..., decln} *)
  | Context of string * syn option (* context x {t} *)
  | Special of string * syn list   (* #whatever t1...tn *) 
+ | Annote of string
 
 fun topToString pre top =
   (case top of 
@@ -84,7 +85,8 @@ fun topToString pre top =
                             ^"}\n"
     | Special (name, syns) => pre^"#"^name^" "^
                               String.concatWith " " (map synToString syns)
-                              ^".\n")
+                              ^".\n"
+    | Annote s => "%***"^s)
 
 local
 
@@ -134,8 +136,8 @@ LexFn
       Stream.Cons ((HASHDENT (stringrange (List.tl match)), posrange match),
          Stream.lazy (fn () => #lexmain self follow))
 
-   fun comment ({self, match, follow, ...}: info) =
-     Stream.Cons ((COMMENT (stringrange (List.tl match)), posrange match),
+   fun annotation ({self, match, follow, ...}: info) =
+     Stream.Cons ((ANNOTE (stringrange (List.tl match)), posrange match),
        Stream.lazy (fn () => #lexmain self follow))
 
    fun simple token ({self, match, follow, ...}: info) = 
@@ -178,7 +180,6 @@ ParseFn
    type string = string
    type ign = unit
    type int = IntInf.int
-   type comment = string
 
    val Ign = ignore
    val Nil  = fn () => []
