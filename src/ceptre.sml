@@ -10,6 +10,7 @@ structure Ceptre = struct
    | Var of var
    | SLit of string
    | ILit of IntInf.int
+
   type pred = ident
   datatype mode = Pers | Lin
   type atom = mode * pred * (term list)
@@ -43,6 +44,10 @@ structure Ceptre = struct
 
   type tp_header = decl list
   datatype builtin = NAT | NAT_ZERO | NAT_SUCC
+
+  fun builtinToString (b: builtin) : string =
+    case b of NAT => "NAT" | NAT_ZERO => "NAT_ZERO" | NAT_SUCC => "NAT_SUCC"
+
   type sigma = {header:tp_header, 
                 builtin: (string * builtin) list,
                 rules:bwd_rule list}

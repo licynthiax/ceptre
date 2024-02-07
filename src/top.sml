@@ -30,13 +30,19 @@ struct
   fun runFirst fname =
     case progs fname of
          (_, []) => NONE
-       | (sg:Ceptre.sigma, prog::_) => 
+       | (sg: Ceptre.sigma, prog::_) => 
            let
              val () = print "Running the following program:\n"
              val () = print (Ceptre.programToString prog) 
            in
              SOME (Exec.run sg prog)
            end
+
+  (* asterism: string -> string -> Ceptre.context (?) *)
+  fun asterism (infile: string) (outfile: string) =
+    case progs infile of
+         (_, []) => NONE
+       | (sg: Ceptre.sigma, prog::_) => SOME (Exec.asterism sg prog outfile)
 
    fun run fname index =
      let

@@ -7,7 +7,6 @@ terminal CONTEXT
 terminal IDENT of string
 terminal NUM of int
 terminal HASHDENT of string
-/* this might be a non-terminal actually but i'll deal with it later */
 terminal ANNOTE of string
 terminal LBRACE
 terminal RBRACE

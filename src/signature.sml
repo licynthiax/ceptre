@@ -52,7 +52,7 @@ struct
        | BuiltinDecl (id, Ceptre.NAT_SUCC) => "#builtin NAT_SUCC "^id
        | StageModeDecl (id, Ceptre.Interactive) => "#interactive "^id^"."
        | StageModeDecl (id, _) => "???"
-       | Annote s => "%*** "^s
+       | Annote s => s
 
    fun id topdecl = 
       case topdecl of
