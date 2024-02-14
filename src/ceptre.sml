@@ -26,6 +26,7 @@ structure Ceptre = struct
   type rule_internal = 
     {name : ident, pivars : int, lhs : atom list, rhs : atom list}
   type context = atom list
+  type annote = string option
 
   (* Const term declarations *)
   datatype predClass = Prop | Bwd | Sense | Act
@@ -42,13 +43,28 @@ structure Ceptre = struct
     {name : ident, pivars : int, 
      head : pred * term list, subgoals : prem}
 
+  type tp_header_annotes = (decl * annote) list
   type tp_header = decl list
   datatype builtin = NAT | NAT_ZERO | NAT_SUCC
+
+  fun zip l1 l2 =
+    case (l1, l2) of
+      (nil, nil) => nil
+    | (nil, l) => nil
+    | (l, nil) => nil
+    | ((h::t), (h'::t')) => (h, h')::(zip t t')
+
+  fun unzip l =
+    case l of
+      nil => (nil, nil)
+    | (a, b)::t =>
+        let val (l1, l2) = unzip t
+        in (a::l1, b::l2) end
 
   fun builtinToString (b: builtin) : string =
     case b of NAT => "NAT" | NAT_ZERO => "NAT_ZERO" | NAT_SUCC => "NAT_SUCC"
 
-  type sigma = {header:tp_header, 
+  type sigma = {header:tp_header_annotes, 
                 builtin: (string * builtin) list,
                 rules:bwd_rule list}
 

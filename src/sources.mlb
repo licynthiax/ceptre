@@ -1,4 +1,5 @@
 ../lib/cmlib/cmlib.mlb
+json.sml
 
 nondet-sig.sml
 nondet-eager.sml
@@ -11,6 +12,7 @@ dot.sml
 traces.sml
 prompt.sml
 exec.sml
+asterism.sml
 
 ceptre.cmlex.sml
 ceptre.cmyacc.sml

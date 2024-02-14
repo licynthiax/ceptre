@@ -12,6 +12,8 @@ datatype token =
  | UNIFY | DIFFER
  | BANG | DOLLAR | STAR | LARROW | RARROW | LLOLLI | RLOLLI
 
+type asAnnote = string option
+
 fun toString tok = 
    case tok of 
       PRED => "PRED" | STAGE => "STAGE" | CONTEXT => "CONTEXT"
@@ -67,15 +69,15 @@ fun synToString syn =
     | EmptyBraces () => "{}")
 
 datatype top = 
-   Decl of syn                    (* something. *)
+   Decl of syn * asAnnote         (* something. *)
  | Stage of string * top list     (* stage x {decl1, ..., decln} *)
  | Context of string * syn option (* context x {t} *)
  | Special of string * syn list   (* #whatever t1...tn *) 
- | Annote of string               (* %*** just a string *)
 
 fun topToString pre top =
   (case top of 
-      Decl syn => pre^synToString syn^".\n"
+      Decl (syn, NONE) => pre^synToString syn^".\n"
+    | Decl (syn, SOME annote) => pre^synToString syn^". ("^annote^")\n"
     | Stage (id, tops) => pre^"stage "^id^" {\n"^
                           String.concat (map (topToString (pre^"  ")) tops)^
                           pre^"}\n"
@@ -85,8 +87,7 @@ fun topToString pre top =
                             ^"}\n"
     | Special (name, syns) => pre^"#"^name^" "^
                               String.concatWith " " (map synToString syns)
-                              ^".\n"
-    | Annote s => "%***"^s)
+                              ^".\n")
 
 local
 
@@ -137,8 +138,12 @@ LexFn
          Stream.lazy (fn () => #lexmain self follow))
 
    fun annotation ({self, match, follow, ...}: info) =
-      Stream.Cons ((ANNOTE (stringrange (List.tl match)), posrange match),
+   let
+     val annote = List.drop (match, 4)
+   in
+      Stream.Cons ((ANNOTE (stringrange annote), posrange annote),
          Stream.lazy (fn () => #lexmain self follow))
+   end
 
    fun simple token ({self, match, follow, ...}: info) = 
       Stream.Cons ((token, posrange match), 
@@ -212,6 +217,10 @@ ParseFn
 
    type tops = top list
    type syns = syn list
+
+   datatype asAnnote = datatype asAnnote
+   val NoAnnote = fn () => NONE
+   val AsAnnote = fn (s:string) => SOME s
 
    datatype terminal = datatype token
 

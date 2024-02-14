@@ -156,9 +156,9 @@ struct
 
    fun extractStage name tops = 
       {name = name,
-       body = map (fn (P.Decl (P.Lolli rule)) => 
+       body = map (fn (P.Decl ((P.Lolli rule), _)) => 
                         (extractRule (gensym ()) rule)
-                    | (P.Decl (P.Ascribe (P.Id id, P.Lolli rule))) => 
+                    | (P.Decl ((P.Ascribe (P.Id id, P.Lolli rule)), _)) => 
                         (remember id; extractRule id rule)
                     | decl => raise Fail ("Only rules can appear in stages.\n"^
                                           P.topToString "Found: "decl))
@@ -207,22 +207,23 @@ struct
        | P.Context (s, NONE) => (remember s; CCtx (s, []))
        | P.Context (s, SOME syn) => (remember s; CCtx (s, extractContext syn))
 
-       | P.Decl (P.Ascribe (P.Id s, P.Lolli rule)) => 
+       (* XXX come back to this, may be needed? *)
+       | P.Decl ((P.Ascribe (P.Id s, P.Lolli rule)), _) => 
            (remember s; CRule (extractRule s rule))
-       | P.Decl (P.Lolli rule) => 
+       | P.Decl ((P.Lolli rule), _) => 
            (CRule (extractRule (gensym ()) rule))
 
-       | P.Decl (P.Ascribe (P.Id id, P.Id "type")) => (remember id; CType id)
-       | P.Decl (P.Ascribe (dc, P.Pred ())) => CPred (extractCls dc C.Prop)
-       | P.Decl (P.Ascribe (dc, P.Id "bwd")) => CPred (extractCls dc C.Bwd)
+       | P.Decl ((P.Ascribe (P.Id id, P.Id "type")), _) => (remember id; CType id)
+       | P.Decl ((P.Ascribe (dc, P.Pred ())), _) => CPred (extractCls dc C.Prop)
+       | P.Decl ((P.Ascribe (dc, P.Id "bwd")), _) => CPred (extractCls dc C.Bwd)
        (* Sensing and acting predicates - should handle this some way other than
         * keyword.
         | P.Decl (P.Ascribe (dc, P.Id "sense")) => CPred (extractCls dc C.Sense)
         | P.Decl (P.Ascribe (dc, P.Id "action")) => CPred (extractCls dc C.Act)
        *)
 
-       | P.Decl (P.Ascribe (dc, class)) => extractDecl types dc class
-       | P.Decl syn => extractDecl types (P.Id (gensym ())) syn 
+       | P.Decl ((P.Ascribe (dc, class)), _) => extractDecl types dc class
+       | P.Decl (syn, _) => extractDecl types (P.Id (gensym ())) syn 
 
        | P.Special (directive, args) =>
            (case directive of
@@ -260,5 +261,4 @@ struct
                        [ P.Id name ] => CStageMode (name, C.Interactive)
                      | _ => raise Fail "Format: #interactive <ident>")
               | _ => raise Fail ("Unknown directive #"^directive))
-       | P.Annote s => CAnnote s
 end

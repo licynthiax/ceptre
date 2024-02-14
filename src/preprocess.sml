@@ -166,7 +166,7 @@ struct
 
   fun declToRule sg syntax =
     case syntax of
-          Decl (Ascribe (Id name, Lolli (lhs_syn, rhs_syn))) =>
+          Decl ((Ascribe (Id name, Lolli (lhs_syn, rhs_syn))), _) =>
             let
               val (lhs, residual) = extractLHS lhs_syn (fn x => x) []
               val rhs = extractRHS rhs_syn residual
@@ -176,7 +176,7 @@ struct
             in
               externalToInternal sg erule
             end
-        | Decl (Lolli (lhs_syn, rhs_syn)) =>
+        | Decl ((Lolli (lhs_syn, rhs_syn)), _) =>
             let
               val (lhs, residual) = extractLHS lhs_syn (fn x => x) []
               val rhs = extractRHS rhs_syn residual
@@ -338,30 +338,29 @@ struct
                 | CCtx of ident * context  (* named ctx *)
                 | CProg of (int option) * ident * context 
                     (* limit, initial phase & initial ctx *)
-                | CDecl of decl
+                | CDecl of decl * asAnnote
                 | CBwd of bwd_rule
                 | CBuiltin of string * Ceptre.builtin
                 | CStageMode of ident * Ceptre.nondet
-                | CAnnote of string
 
   (* checks decl wrt sg *)
   (* returns a csyn, either a CDecl or a CBwd *)
   fun extractDecl sg top =
     case top of
-         Decl (Ascribe (data, class)) =>
+         Decl ((Ascribe (data, class)), annote) =>
          (case class of
-               App (class, []) => extractDecl sg (Decl (Ascribe (data, class)))
+               App (class, []) => extractDecl sg (Decl ((Ascribe (data, class)), annote))
             (* first-order types *)
-             | Id "type" => CDecl (extractID data, Ceptre.Type)
+             | Id "type" => CDecl ((extractID data, Ceptre.Type), annote)
             (* predicates *)
              | Pred () => (* parse data as f t...t *)
-                CDecl (extractPredDecl data Ceptre.Prop)
+                CDecl ((extractPredDecl data Ceptre.Prop), annote)
              | Id "bwd" =>
-                 CDecl (extractPredDecl data Ceptre.Bwd)
+                 CDecl ((extractPredDecl data Ceptre.Bwd), annote)
              | Id "sense" => (* Parse as a Ceptre.Pred Bwd *)
-                 CDecl (extractPredDecl data Ceptre.Sense)
+                 CDecl ((extractPredDecl data Ceptre.Sense), annote)
              | Id "action" => (* parse as Ceptre.pred Act *)
-                 CDecl (extractPredDecl data Ceptre.Act)
+                 CDecl ((extractPredDecl data Ceptre.Act), annote)
             (* first-order terms *)
              | Id ident => (* data : ident *)
                 (* Look up ident in sg.
@@ -373,7 +372,7 @@ struct
                           val Fn (name, argtps) = extractGroundTerm data
                           val idents = map extractIDTms argtps
                         in
-                          CDecl (name, Ceptre.Tp (idents, ident))
+                          CDecl ((name, Ceptre.Tp (idents, ident)), annote)
                         end
                  (* if it's a bwd pred, data should just be an id. *)
                     | SOME (Ceptre.Pred (Bwd, arg_tps)) =>
@@ -410,11 +409,11 @@ struct
                  in
                    raise IllFormed
                  end)
-      | Decl unnamed => 
+      | Decl (unnamed, annote) => 
           let
             val id = gensym ()
           in
-            extractDecl sg (Decl (Ascribe (Id id, unnamed)))
+            extractDecl sg (Decl ((Ascribe (Id id, unnamed)), annote))
           end
       | _ => raise IllFormed
 
@@ -443,18 +442,21 @@ struct
        | SOME ({name,body,nondet}, stages) =>
           {name=name,body=body,nondet=mode}::stages
 
-  fun extractTop sg ctxs stages top =
+  fun extractTop (header: tp_header_annotes) ctxs stages top =
+  let
+    val (sg, annotes) = unzip header
+  in
     case top of
          Stage _ => CStage (extractStage sg top)
-       | Decl (Ascribe (Id _, Lolli _)) => CRule (declToRule sg top)            
-       | Decl (Lolli rule) =>
+       | Decl ((Ascribe (Id _, Lolli _)), _) => CRule (declToRule sg top)            
+       | Decl ((Lolli rule), annote) =>
            let
              val name = gensym ()
              val named_syn = Ascribe (Id name, Lolli rule)
            in
-             extractTop sg ctxs stages (Decl named_syn)
+             extractTop header ctxs stages (Decl (named_syn, annote))
            end
-       | Decl s => (extractDecl sg top 
+       | Decl (s, _) => (extractDecl sg top 
         (* XXX nb this doesn't actually catch Ceptre.IllFormed *)
                       handle IllFormed => CNone s)
        | Context _ => CCtx (extractContext ctxs sg top)
@@ -467,7 +469,7 @@ struct
                        [Id name] => CStageMode (name, Ceptre.Interactive)
                       | _ => raise IllFormed)
               | _ => raise IllFormed) (* XXX put builtin here *)
-       | Annote s => CAnnote s
+  end
 
   fun csynToString (CStage stage) = stageToString stage
     | csynToString (CRule rule) = ruleToString rule
@@ -476,18 +478,19 @@ struct
     | csynToString (CCtx (name, ctx)) = name ^ " : " ^ (contextToString ctx)
     | csynToString (CProg (_,stg,ctx)) = 
         "#trace * " ^ stg ^ " " ^ (contextToString ctx) ^ "."
-    | csynToString (CDecl (name,class)) = 
+    | csynToString (CDecl ((name,class), SOME annote)) = 
+        name ^ " : " ^ (classToString class) ^ ", annote: "^annote^"."
+    | csynToString (CDecl ((name,class), NONE)) = 
         name ^ " : " ^ (classToString class) ^ "."
     | csynToString (CBwd bwd) = "bwd" (* XXX *)
     | csynToString (CBuiltin builtin) = "builtin" (* XXX *)
     | csynToString (CStageMode (id,mode)) = 
         "#" ^ (nondetToString mode) ^ " " ^ id ^ "."
-    | csynToString (CAnnote s) = "%*** "^s
       
 
 
   (* turn a whole list of top-level decls into a list of progs. *)
-  fun process' tops sg bwds contexts stages links progs builtins =
+  fun process' tops (sg: tp_header_annotes) bwds contexts stages links progs builtins =
     case tops of
          [] => ({header=rev sg,
                  builtin=rev builtins,
@@ -513,8 +516,8 @@ struct
                             (* XXX error? *)
                | CCtx c => process' tops sg bwds (c::contexts) stages links progs
                              builtins
-               | CDecl d =>
-                   process' tops (d::sg) bwds contexts stages links progs
+               | CDecl (d, annote) =>
+                   process' tops ((d, annote)::sg) bwds contexts stages links progs
                      builtins
                | CBwd bwd => (* XXX *)
                    process' tops sg (bwd::bwds) contexts stages links progs 
@@ -543,12 +546,7 @@ struct
                     in
                       process' tops sg bwds contexts stages' links progs
                         builtins
-                    end
-                | CAnnote s => process' tops sg bwds contexts stages links
-                               progs builtins
-                               (* XXX this is definitely not correct i'm just
-                               * trying to get this program to work right now *)
-             )
+                    end)
 
   fun process tops = process' tops [] [] [] [] [] [] []
     : (Ceptre.sigma * (Ceptre.program list))

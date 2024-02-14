@@ -30,11 +30,10 @@ terminal DIFFER   precr 80 /* nonassoc */
 start Tops
 
 nonterminal Top: top = 
-   1:Syn PERIOD                                                 => Decl
+   2:Annotation 1:Syn PERIOD                                    => Decl
    STAGE 1:IDENT OpEquals LBRACE 2:Tops RBRACE OpPeriod         => Stage
    CONTEXT 1:IDENT OpEquals LBRACE 2:OpSyn RBRACE OpPeriod      => Context
    1:HASHDENT 2:Atomics PERIOD                                  => Special
-   1:ANNOTE                                                     => Annote
 
 nonterminal Tops: tops =       => NilT
    1:Top 2:Tops                => ConsT
@@ -79,3 +78,5 @@ nonterminal OpPeriod: ign =    => Ign
 nonterminal OpSyn: synopt =    => noneSyn
    1:Syn                       => someSyn
 
+nonterminal Annotation: asAnnote =   => NoAnnote
+   1:ANNOTE                          => AsAnnote

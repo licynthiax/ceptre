@@ -42,7 +42,7 @@ struct
   fun asterism (infile: string) (outfile: string) =
     case progs infile of
          (_, []) => NONE
-       | (sg: Ceptre.sigma, prog::_) => SOME (Exec.asterism sg prog outfile)
+       | (sg: Ceptre.sigma, prog::_) => SOME (Asterism.run sg prog outfile)
 
    fun run fname index =
      let

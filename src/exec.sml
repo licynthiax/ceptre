@@ -225,35 +225,6 @@ in
   TextIO.closeOut logfile
 end
 
-  open Ceptre
-  fun progToJson
-    (sigma as {header, builtin, rules}: sigma)
-    (program as {stages, links, init_stage, init_state}: program)
-    : string list =
-    "header" :: (map
-      (fn (ident: ident, cl: classifier) =>
-        "("^ident^","^(classToString cl)^")")
-      header)
-    @ "\nbuiltin" :: (map
-      (fn (s, b) =>
-        (builtinToString b)^" "^s)
-      builtin)
-    @ "\nbwd rules" :: (map
-      (fn (bwd_rule as { name, ... }) => name)
-      rules)
-    @ ["\n", programToString program]
-
-  (* only dealing w/ single-state ceptre programs rn *)
-  fun asterism (sigma: sigma) (program: program) (outfile: string) =
-    let
-      val json = TextIO.openOut outfile
-      val () = print "\ngenerating JSON file.\n"
-      val prog_json = progToJson sigma program
-      val () = TextIO.output(json, (String.concatWith "\n" prog_json)^"\n")
-      val () = TextIO.flushOut json
-    in
-      TextIO.closeOut json
-    end
 end
 
 structure Exec = ExecFn (TextPrompt)
