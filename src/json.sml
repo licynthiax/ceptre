@@ -1,15 +1,23 @@
 structure JsonUtil =
 struct
-  datatype Json =
-    OBJECT of Json list
-  | LIST of Json list
-  | MEMBER of string * Json
+  datatype Element =
+    LIST of Element list
   | STR of string
+  | NUM of int
+  | OBJ of (string * Element) list
 
-  fun jsonToString (j: Json) : string =
-    case j of
-      OBJECT l => "{"^(String.concatWith "," (map jsonToString l))^"}"
-    | LIST l => "["^(String.concatWith "," (map jsonToString l))^"]"
-    | MEMBER (s, j) => "\""^s^"\":"^(jsonToString j)
+  type Member = string * Element
+  type Json = (string * Element) list
+
+  fun elemToString (e: Element): string =
+    case e of
+      OBJ j => jsonToString j
+    | LIST l => "["^(String.concatWith "," (map elemToString l))^"]"
+    | NUM i => Int.toString i
     | STR s => "\""^s^"\""
+
+  and jsonToString (j: Json) : string =
+    "{"^(String.concatWith ","
+        (map (fn (str, elem) => "\""^str^"\":"^(elemToString elem)) j)
+    )^"}"
 end
