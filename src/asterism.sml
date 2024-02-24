@@ -63,7 +63,7 @@ structure Asterism = struct
 
   fun atomToJson (atom as (m: mode, p: pred, t: term list)): Json =
   let
-    val mode_string = case m of Pers => "pers" | Lin => "lin"
+    val mode_string = case m of Pers => "Pers" | Lin => "Lin"
   in
     [
       ("name", STR p),
@@ -80,6 +80,10 @@ structure Asterism = struct
         ("lhs", LIST (map (fn a => OBJ (atomToJson a)) lhs)),
         ("rhs", LIST (map (fn a => OBJ (atomToJson a)) rhs))
       ]
+
+  fun nondetToString Random = "Random"
+    | nondetToString Interactive = "Interactive"
+    | nondetToString Ordered = "Ordered"
 
   fun stageToJson
     (s as {name: ident, nondet: nondet, body: rule_internal list}: stage): Json =
