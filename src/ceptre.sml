@@ -23,10 +23,10 @@ structure Ceptre = struct
    | Atom of atom
   type rule_internal_new = 
     {name : ident, pivars : int, lhs : prem, rhs : atom list}
-  type rule_internal = 
-    {name : ident, pivars : int, lhs : atom list, rhs : atom list}
   type context = atom list
   type annote = string option
+  type rule_internal = 
+    {name : ident, pivars : int, lhs : atom list, rhs : atom list, ann: annote}
 
   (* Const term declarations *)
   datatype predClass = Prop | Bwd | Sense | Act
@@ -112,7 +112,7 @@ structure Ceptre = struct
   fun contextToString x = 
     "{" ^ (String.concatWith ", " (map atomToString x)) ^ "}"
 
-  fun ruleToString {name, pivars, lhs, rhs} =
+  fun ruleToString {name, pivars, lhs, rhs, ann} =
     let
       val lhs_string = String.concatWith " * " (map atomToString lhs)
       val rhs_string = String.concatWith " * " (map atomToString rhs)
@@ -146,7 +146,7 @@ structure Ceptre = struct
     | EString of string
   type eatom = pred * (external_term list)
   datatype epred = ELin of eatom | EPers of eatom
-  type rule_external = {name : ident, lhs : epred list, rhs : epred list}
+  type rule_external = {name : ident, lhs : epred list, rhs : epred list, ann: annote}
   
   (* external: foo X Y -o bar Y
   *  internal: Pi (2). foo 0 1 -o bar 1
@@ -265,7 +265,7 @@ structure Ceptre = struct
                     end)
     end
 
-  fun externalToBwd sg ({name,lhs,rhs}:rule_external) =
+  fun externalToBwd sg ({name,lhs,rhs,ann}:rule_external) =
     case rhs of
          [ehead as EPers(pred,eargs)] =>
          (* XXX this check might make sense but it isn't working atm
@@ -287,14 +287,14 @@ structure Ceptre = struct
        | _ => raise IllFormed
 
   fun externalToInternal 
-    (sg:tp_header) ({name,lhs,rhs}:rule_external) =
+    (sg:tp_header) ({name,lhs,rhs,ann}:rule_external) =
     let
       val (table, nvars) = walk_atoms lhs ([], 0)
       val atomMapper = eatomToAtom sg table 
       val lhs' = map atomMapper lhs
       val rhs' = map atomMapper rhs
     in 
-      {name=name, pivars=nvars, lhs=lhs', rhs=rhs'}
+      {name=name, pivars=nvars, lhs=lhs', rhs=rhs', ann=ann}
       : rule_internal
     end
 
@@ -327,18 +327,19 @@ structure Ceptre = struct
      pre_stage : ident,
      lhs : atom list,
      post_stage : ident,
-     rhs : atom list}
+     rhs : atom list,
+     ann: annote}
 
   fun nullaryTerm t = Fn (t, [])
   fun unaryPred p arg = (Lin, p, [nullaryTerm arg])
 
   (* XXX also remove qui? *)
-  fun stageRuleToRule {name, pivars, pre_stage, lhs, post_stage, rhs} =
+  fun stageRuleToRule {name, pivars, pre_stage, lhs, post_stage, rhs, ann} =
   let
     val lhs = (unaryPred "stage" pre_stage)::lhs
     val rhs = (unaryPred "stage" post_stage)::rhs
   in
-    {name=name, pivars=pivars, lhs=lhs, rhs=rhs}
+    {name=name, pivars=pivars, lhs=lhs, rhs=rhs, ann=ann}
   end
 
   (* program is a set of stages, a set of stage rules, and an identifier for an
@@ -396,12 +397,12 @@ structure Ceptre = struct
 
   val rule1'1 : rule_internal = 
    {name="p/edge", pivars = 2,
-    lhs = [edge (Var 0) (Var 1)], rhs = [path (Var 0) (Var 1)]}
+    lhs = [edge (Var 0) (Var 1)], rhs = [path (Var 0) (Var 1)], ann=NONE}
 
   val rule1'2 : rule_internal =
    {name="p/trns", pivars = 3,
     lhs = [path (Var 0) (Var 1), path (Var 1) (Var 2)],
-    rhs = [path (Var 0) (Var 2)]}
+    rhs = [path (Var 0) (Var 2)], ann=NONE}
 
   val stage_paths : stage =
     {name = "paths",
@@ -421,7 +422,7 @@ structure Ceptre = struct
   (* Testing external to internal translation *)
   val ext1 =
     {name="r1", lhs=[ELin ("a", [EVar "X", EVar "Y"])],
-                 rhs=[ELin ("b", [EVar "X"]), ELin ("c", [EVar "Y"])]}
+                 rhs=[ELin ("b", [EVar "X"]), ELin ("c", [EVar "Y"])], ann=NONE}
 
   val linpred = Pred (Prop, [])
 

@@ -166,23 +166,23 @@ struct
 
   fun declToRule sg syntax =
     case syntax of
-          Decl ((Ascribe (Id name, Lolli (lhs_syn, rhs_syn))), _) =>
+          Decl ((Ascribe (Id name, Lolli (lhs_syn, rhs_syn))), annote) =>
             let
               val (lhs, residual) = extractLHS lhs_syn (fn x => x) []
               val rhs = extractRHS rhs_syn residual
               (* external syntax *)
-              val erule = {name = name, lhs = lhs, rhs = rhs}
+              val erule = {name = name, lhs = lhs, rhs = rhs, ann = annote}
               val () = wild_gensym := 0 (* reset for each rule *)
             in
               externalToInternal sg erule
             end
-        | Decl ((Lolli (lhs_syn, rhs_syn)), _) =>
+        | Decl ((Lolli (lhs_syn, rhs_syn)), annote) =>
             let
               val (lhs, residual) = extractLHS lhs_syn (fn x => x) []
               val rhs = extractRHS rhs_syn residual
               val name = gensym ()
               (* external syntax *)
-              val erule = {name = name, lhs = lhs, rhs = rhs}
+              val erule = {name = name, lhs = lhs, rhs = rhs, ann = annote}
               val () = wild_gensym := 0 (* reset for each rule *)
             in
               externalToInternal sg erule
@@ -211,13 +211,13 @@ struct
 
   (* XXX hardcode stage keyword? *)
   (* XXX stages with arguments? *)
-  fun ruleToStageRule {name, pivars, lhs, rhs} =
+  fun ruleToStageRule {name, pivars, lhs, rhs, ann} =
     case separate stageAtom lhs of
          SOME ((Lin, "stage", [Fn (pre_stage, [])]), lhs') =>
     (case separate stageAtom rhs of
           SOME ((Lin, "stage", [Fn (post_stage, [])]), rhs') =>
             SOME
-            {name=name, pivars=pivars, lhs=lhs', rhs=rhs',
+            {name=name, pivars=pivars, lhs=lhs', rhs=rhs', ann=ann,
             pre_stage=pre_stage, post_stage=post_stage}
         | _ => NONE)
         | _ => NONE
@@ -329,7 +329,9 @@ struct
              *)
              val () = (case dollars of [] => () | _ => raise IllFormed)
            in
-             {name=name, lhs=subgoals, rhs=[pred]} : Ceptre.rule_external
+             (* this is probly not right but i don't think the code i'm working
+             * with uses bwd rules *)
+             {name=name, lhs=subgoals, rhs=[pred], ann=NONE} : Ceptre.rule_external
            end
   
   datatype csyn = CStage of stage | CRule of rule_internal 
@@ -448,7 +450,7 @@ struct
   in
     case top of
          Stage _ => CStage (extractStage sg top)
-       | Decl ((Ascribe (Id _, Lolli _)), _) => CRule (declToRule sg top)            
+       | Decl ((Ascribe (Id _, Lolli _)), annote) => CRule (declToRule sg top)            
        | Decl ((Lolli rule), annote) =>
            let
              val name = gensym ()

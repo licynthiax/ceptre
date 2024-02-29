@@ -236,7 +236,7 @@ fun fc_builtin (FC {prog = {builtin, ...}, ...}) = builtin
 
 type sense = fastctx * Ceptre.term list -> Ceptre.term list list
                                
-fun init (sigma: C.sigma) senses prog initial_ctx: fastctx = 
+fun init (sigma: C.sigma) senses (prog: C.stage list) initial_ctx: fastctx = 
 let
    (* Add unique identifiers to all forward-chaining rules *)
    fun number_list uid [] = []
@@ -244,7 +244,7 @@ let
           (uid, x) :: number_list (uid+1) xs
 
    fun number_prog uid [] = []
-     | number_prog uid ({name, body, nondet} :: stages) =  
+     | number_prog uid (({name, body, nondet}: C.stage) :: stages) =  
           {name = name, body = number_list uid body, nondet=nondet}
           :: number_prog (uid + length body) stages
 
@@ -254,7 +254,7 @@ let
    fun compile_lhses {name, body, nondet} = 
       (name, 
        List.map
-          (fn (uid, {name, pivars, lhs, rhs}) => 
+          (fn (uid, {name, pivars, lhs, rhs, ann}) => 
               {name = (name, uid), pivars = pivars, 
                lhs = 
                (* XXX REPLACE WITH IDENTITY WHEN TYPES CHANGE *)

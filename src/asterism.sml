@@ -73,13 +73,21 @@ structure Asterism = struct
   end
 
   fun ruleToJson
-    (rule as {name: ident, pivars: int, lhs: atom list, rhs: atom list}: rule_internal): Json =
-      [
+    (rule as
+      {name: ident, pivars: int, lhs: atom list, rhs: atom list, ann: annote}:
+    rule_internal): Json =
+    let
+      val r = [
         ("name", STR name),
         ("pivars", NUM pivars),
         ("lhs", LIST (map (fn a => OBJ (atomToJson a)) lhs)),
         ("rhs", LIST (map (fn a => OBJ (atomToJson a)) rhs))
       ]
+    in
+      case ann of
+        SOME a => r @ [("annote", STR a)]
+      | NONE => r
+    end
 
   fun nondetToString Random = "Random"
     | nondetToString Interactive = "Interactive"
@@ -94,15 +102,22 @@ structure Asterism = struct
     ]
 
   fun stageruleToJson
-    ({name: ident, pivars: int, pre_stage: ident, lhs: atom list, post_stage: ident, rhs: atom list}: stage_rule): Json =
-    [
-      ("name", STR name),
-      ("pivars", NUM pivars),
-      ("pre_stage", STR pre_stage),
-      ("post_stage", STR post_stage),
-      ("lhs", LIST (map (fn a => OBJ (atomToJson a)) lhs)),
-      ("rhs", LIST (map (fn a => OBJ (atomToJson a)) rhs))
-    ]
+    ({name: ident, pivars: int, pre_stage: ident, lhs: atom list, post_stage:
+    ident, rhs: atom list, ann: annote}: stage_rule): Json =
+    let
+      val r = [
+        ("name", STR name),
+        ("pivars", NUM pivars),
+        ("pre_stage", STR pre_stage),
+        ("post_stage", STR post_stage),
+        ("lhs", LIST (map (fn a => OBJ (atomToJson a)) lhs)),
+        ("rhs", LIST (map (fn a => OBJ (atomToJson a)) rhs))
+      ]
+    in
+      case ann of
+        SOME a => r @ [("annote", STR a)]
+      | NONE => r
+    end
 
   fun progToJson
     (sigma as {header, builtin, rules}: sigma)
